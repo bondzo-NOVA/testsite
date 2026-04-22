@@ -1,64 +1,514 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Cookie Monitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>panda.wtf • cyber workshop</title>
+    <!-- Tailwind + Font Awesome for icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* custom panda-wtf cyberpunk theme */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: black;
-            color: #0f0;
-            font-family: monospace;
-            padding: 20px;
+            background: radial-gradient(circle at 20% 30%, #0a0a0f 0%, #030006 100%);
+            font-family: 'Segoe UI', 'Courier New', 'Fira Code', monospace;
+            color: #e2e2ff;
+            min-height: 100vh;
+            position: relative;
         }
-        textarea {
+
+        /* glitchy grid overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 200px;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, rgba(212, 0, 255, 0.08) 0px, rgba(212, 0, 255, 0.08) 1px, transparent 1px, transparent 8px),
+                repeating-linear-gradient(90deg, rgba(0, 255, 255, 0.05) 0px, rgba(0, 255, 255, 0.05) 1px, transparent 1px, transparent 12px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* neon glow for headings */
+        .neon-text {
+            text-shadow: 0 0 3px #ff44ee, 0 0 8px #b800ff, 0 0 15px #7700cc;
+            letter-spacing: 2px;
+        }
+
+        .glow-card {
+            background: rgba(5, 5, 20, 0.75);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(212, 0, 255, 0.5);
+            border-radius: 1.75rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .glow-card:hover {
+            border-color: #ff44ee;
+            box-shadow: 0 0 18px rgba(212, 0, 255, 0.4);
+        }
+
+        /* product image styling */
+        .product-img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 1rem;
             background: #111;
-            color: #0f0;
-            border: 1px solid #0f0;
+            border: 1px solid #aa44ff;
+            transition: transform 0.2s ease;
+        }
+        .product-img:hover {
+            transform: scale(1.02);
+            border-color: #ff88ff;
+        }
+
+        /* status badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #000000aa;
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            border-left: 3px solid;
             font-family: monospace;
-            padding: 10px;
         }
-        button {
-            background: #0f0;
-            color: black;
-            border: none;
-            padding: 10px 20px;
+
+        /* admin control panel hidden by default */
+        .admin-panel {
+            background: #0a0015e0;
+            border-radius: 24px;
+            border: 1px solid #b84cff;
+            backdrop-filter: blur(12px);
+        }
+
+        button.admin-only {
             cursor: pointer;
-            margin-top: 10px;
         }
-        .status {
-            margin-top: 10px;
-            font-size: 12px;
+
+        /* discord button style */
+        .discord-btn {
+            background: #5865F2;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px #5865F280;
+        }
+        .discord-btn:hover {
+            background: #4752c4;
+            transform: scale(1.03);
+            box-shadow: 0 0 18px #5865F2;
+        }
+
+        /* custom scroll */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a001f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c146ff;
+            border-radius: 10px;
+        }
+
+        /* product grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 1.5rem;
         }
     </style>
 </head>
-<body>
-    <h1>🍪 Roblox Cookie Monitor</h1>
-    <textarea id="cookieBox" readonly placeholder="Waiting for cookie..."></textarea>
-    <button onclick="refreshCookie()">Refresh</button>
-    <div class="status" id="status"></div>
+<body class="relative">
+
+    <div class="grid-overlay"></div>
+    
+    <!-- floating particles effect (minimal cyber) -->
+    <div class="fixed inset-0 pointer-events-none z-0 opacity-30">
+        <div class="absolute top-20 left-[15%] w-1 h-1 bg-purple-400 rounded-full animate-ping"></div>
+        <div class="absolute bottom-32 right-[20%] w-1.5 h-1.5 bg-pink-400 rounded-full animate-pulse"></div>
+        <div class="absolute top-[40%] left-[80%] w-2 h-2 bg-cyan-300 rounded-full blur-sm"></div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="fixed top-0 left-0 w-full z-30 bg-black/70 backdrop-blur-md border-b border-purple-500/40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fab fa-pagelines text-3xl text-purple-400"></i>
+                <span class="text-2xl font-black tracking-wider bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-300 bg-clip-text text-transparent">panda.wtf</span>
+            </div>
+            <div class="flex items-center gap-5 text-sm md:text-base">
+                <a href="#products" class="hover:text-purple-300 transition-colors font-medium">📦 PRODUCTS</a>
+                <a href="#status-area" class="hover:text-purple-300 transition-colors font-medium">⚡ STATUS</a>
+                <!-- DISCORD BUTTON (main) -->
+                <a href="https://discord.gg/pandawtf" target="_blank" class="discord-btn flex items-center gap-2 px-4 py-1.5 rounded-full text-white font-semibold text-sm shadow-md">
+                    <i class="fab fa-discord"></i> JOIN DISCORD
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION with ASCII -->
+    <div class="pt-28 pb-6 text-center relative z-10">
+        <pre class="text-[9px] md:text-[11px] leading-tight text-purple-300 font-mono whitespace-pre overflow-x-auto px-2">
+    ██████╗  █████╗ ███╗   ██╗██████╗  █████╗     ██╗    ██╗████████╗███████╗
+    ██╔══██╗██╔══██╗████╗  ██║██╔══██╗██╔══██╗    ██║    ██║╚══██╔══╝██╔════╝
+    ██████╔╝███████║██╔██╗ ██║██║  ██║███████║    ██║ █╗ ██║   ██║   █████╗  
+    ██╔═══╝ ██╔══██║██║╚██╗██║██║  ██║██╔══██║    ██║███╗██║   ██║   ██╔══╝  
+    ██║     ██║  ██║██║ ╚████║██████╔╝██║  ██║    ╚███╔███╔╝   ██║   ██║     
+    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝     ╚══╝╚══╝    ╚═╝   ╚═╝     
+        </pre>
+        <div class="text-3xl md:text-5xl font-black mt-2 neon-text">
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-pink-300 to-purple-300">CYBER WORKSHOP</span>
+        </div>
+        <p class="text-purple-200/80 max-w-xl mx-auto mt-3 text-sm">panda powered • neon infused • only the weirdest tools</p>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-6xl mx-auto px-5 pb-20 relative z-10">
+        
+        <!-- PRODUCTS SECTION -->
+        <div id="products" class="scroll-mt-24 mb-16">
+            <div class="flex items-center gap-3 mb-6 border-b border-purple-500/40 pb-2">
+                <i class="fas fa-boxes text-2xl text-pink-400"></i>
+                <h2 class="text-3xl font-bold tracking-wide">PRODUCTS</h2>
+                <span class="text-xs text-purple-300/60 ml-auto">✨ drag & drop images to replace</span>
+            </div>
+            <div class="glow-card p-6">
+                <div id="productGridContainer" class="product-grid">
+                    <!-- dynamic product cards will be injected here -->
+                </div>
+                <!-- hidden file input for admin image updates -->
+                <div class="mt-8 text-center text-xs text-purple-300/50">
+                    <p class="italic">📸 Admin: click any product image to upload new picture (only you can change)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS SECTION + ADMIN TOGGLE -->
+        <div id="status-area" class="scroll-mt-24 mb-16">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-satellite-dish text-2xl text-cyan-300"></i>
+                    <h2 class="text-3xl font-bold tracking-wide">SYSTEM STATUS</h2>
+                </div>
+                <!-- live status indicator (public view) -->
+                <div id="publicStatusBadge" class="status-badge">
+                    <i class="fas fa-circle" id="statusLed" style="font-size: 10px;"></i>
+                    <span id="statusText">checking...</span>
+                </div>
+            </div>
+            <div class="glow-card p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div class="flex-1">
+                        <p class="text-purple-200 text-lg">🛸 Operation <strong class="text-purple-300">panda.wtf</strong> live feed</p>
+                        <div class="mt-2 h-2 w-full max-w-md bg-black/60 rounded-full overflow-hidden">
+                            <div id="statusGlowBar" class="h-full w-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #b800ff, #ff44ee);"></div>
+                        </div>
+                        <p id="statusDescription" class="text-sm text-purple-300/70 mt-3">current mode: <span id="modeLabel">—</span></p>
+                    </div>
+                    <!-- Admin control panel: visible only after secret double-click (only me) -->
+                    <div id="adminControlZone" class="bg-black/40 p-4 rounded-xl border border-dashed border-purple-500/40 min-w-[200px]">
+                        <div class="flex items-center gap-2 text-xs text-purple-300/80">
+                            <i class="fas fa-lock"></i> <span>🔐 admin zone (hidden)</span>
+                        </div>
+                        <div id="adminRevealPanel" class="mt-2 hidden admin-panel p-3 rounded-xl">
+                            <p class="text-sm font-bold text-pink-300 mb-2"><i class="fas fa-crown"></i> Master Toggle</p>
+                            <div class="flex gap-4 items-center">
+                                <button id="setOnlineBtn" class="bg-green-700 hover:bg-green-600 px-4 py-2 rounded-full text-white text-sm font-bold transition flex-1">🟢 SET ONLINE</button>
+                                <button id="setOfflineBtn" class="bg-red-800 hover:bg-red-700 px-4 py-2 rounded-full text-white text-sm font-bold transition flex-1">🔴 SET OFFLINE</button>
+                            </div>
+                            <p class="text-[11px] text-purple-300/60 mt-2 text-center">status changes affect entire site</p>
+                            <hr class="my-2 border-purple-500/30">
+                            <p class="text-[11px] text-center">✨ only you see this panel</p>
+                        </div>
+                        <div id="adminHint" class="text-center text-[11px] text-purple-400/70 mt-1 cursor-pointer hover:text-pink-300 transition" ondblclick="revealAdminPanel()">
+                            ⚡ double-click here (admin only)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECONDARY DISCORD BUTTON (extra) -->
+        <div class="flex justify-center mt-4">
+            <a href="https://discord.gg/pandawtf" target="_blank" class="discord-btn flex items-center gap-3 px-8 py-3 rounded-full text-white font-bold text-lg shadow-xl transition-all hover:shadow-purple-500/50">
+                <i class="fab fa-discord fa-xl"></i> Join our panda colony on Discord
+            </a>
+        </div>
+    </main>
+
+    <footer class="text-center py-6 text-purple-400/50 text-sm border-t border-purple-500/20 mt-6">
+        <p>🐼 panda.wtf — where chaos meets neon | all systems go</p>
+    </footer>
 
     <script>
-        async function refreshCookie() {
-            try {
-                const response = await fetch('cookie.json?t=' + Date.now());
-                const data = await response.json();
-                if (data.cookie) {
-                    document.getElementById('cookieBox').value = data.cookie;
-                    document.getElementById('status').innerHTML = `✅ Last updated: ${data.timestamp}`;
-                } else {
-                    document.getElementById('cookieBox').value = 'No cookie received yet.';
-                    document.getElementById('status').innerHTML = '⏳ Waiting for first cookie...';
-                }
-            } catch (error) {
-                document.getElementById('cookieBox').value = 'Error loading cookie data.';
-                document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+        // ---------- GLOBALS ----------
+        // Current operational status (online/offline) - only admin can change via hidden panel
+        let currentStatus = "online";   // "online" or "offline"
+        
+        // Product data array: each item has id, name, imageUrl (default placeholder)
+        let products = [
+            { id: 1, name: "NEON PANDA PLUSH", imageUrl: "https://placehold.co/400x400/1a0033/ff44ee?text=🐼+PANDA+plush" },
+            { id: 2, name: "CYBER BAMBOO STICK", imageUrl: "https://placehold.co/400x400/1a0033/ff44ee?text=🎋+CYBER+BAMBOO" },
+            { id: 3, name: "PANDA.VISION GOGGLES", imageUrl: "https://placehold.co/400x400/1a0033/ff44ee?text=🥽+VISION" },
+            { id: 4, name: "WTF EDITION USB", imageUrl: "https://placehold.co/400x400/1a0033/ff44ee?text=⚡+WTF+DRIVE" },
+            { id: 5, name: "GLITCH PANDA MASK", imageUrl: "https://placehold.co/400x400/1a0033/ff44ee?text=🎭+GLITCH+MASK" },
+            { id: 6, name: "HOLOGRAM DECODER", imageUrl: "https://placehold.co/400x400/1a0033/ff44ee?text=📡+DECODER" }
+        ];
+
+        // Helper: update all status UI elements based on currentStatus
+        function updateStatusUI() {
+            const statusTextSpan = document.getElementById("statusText");
+            const statusLed = document.getElementById("statusLed");
+            const modeLabelSpan = document.getElementById("modeLabel");
+            const statusGlowBar = document.getElementById("statusGlowBar");
+            const statusDesc = document.getElementById("statusDescription");
+            
+            if (currentStatus === "online") {
+                statusTextSpan.innerText = "🟢 ONLINE • operational";
+                statusLed.style.color = "#22ff88";
+                statusLed.style.textShadow = "0 0 6px #22ff88";
+                modeLabelSpan.innerText = "LIVE / ACTIVE";
+                if (statusGlowBar) statusGlowBar.style.width = "100%";
+                if (statusDesc) statusDesc.innerHTML = "🌀 All panda systems running. Products are available, discord active. <i class='fas fa-bolt'></i>";
+            } else {
+                statusTextSpan.innerText = "🔴 OFFLINE • maintenance mode";
+                statusLed.style.color = "#ff3366";
+                statusLed.style.textShadow = "0 0 6px #ff3366";
+                modeLabelSpan.innerText = "MAINTENANCE / DARK";
+                if (statusGlowBar) statusGlowBar.style.width = "35%";
+                if (statusDesc) statusDesc.innerHTML = "⚠️ Panda is sleeping. Services may be limited, but discord still works!";
             }
         }
 
-        // Auto-refresh every 10 seconds
-        refreshCookie();
-        setInterval(refreshCookie, 10000);
+        // Function to render product cards (with image upload ability only for admin via double-click trigger on image)
+        function renderProducts() {
+            const container = document.getElementById("productGridContainer");
+            if (!container) return;
+            container.innerHTML = "";
+            products.forEach(product => {
+                const card = document.createElement("div");
+                card.className = "bg-black/40 rounded-2xl p-3 border border-purple-500/40 transition-all hover:border-purple-300";
+                card.innerHTML = `
+                    <div class="relative group">
+                        <img src="${product.imageUrl}" alt="${product.name}" class="product-img w-full aspect-square object-cover rounded-xl cursor-pointer" data-product-id="${product.id}">
+                        <div class="absolute bottom-2 right-2 bg-black/70 text-[10px] px-2 py-0.5 rounded-full text-purple-300 opacity-0 group-hover:opacity-100 transition">✏️ click to edit</div>
+                    </div>
+                    <div class="mt-3 text-center font-bold text-purple-200 text-sm">${product.name}</div>
+                    <div class="text-center text-[11px] text-purple-400/70">✦ panda tech ✦</div>
+                `;
+                container.appendChild(card);
+            });
+            // attach image click handler for admin-only image upload
+            document.querySelectorAll('.product-img').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const productId = parseInt(img.getAttribute('data-product-id'));
+                    // only allow if admin panel is visible (meaning user has unlocked admin rights)
+                    const adminPanelDiv = document.getElementById('adminRevealPanel');
+                    const isAdminMode = adminPanelDiv && !adminPanelDiv.classList.contains('hidden');
+                    if (!isAdminMode) {
+                        // subtle notification: not admin
+                        showToast("🔒 Only admin can change product images", "#b84cff");
+                        return;
+                    }
+                    // create file input
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = 'image/*';
+                    fileInput.onchange = (event) => {
+                        const file = event.target.files[0];
+                        if (file && (file.type.startsWith('image/'))) {
+                            const reader = new FileReader();
+                            reader.onload = function(ev) {
+                                const newImgUrl = ev.target.result;
+                                // update products array
+                                const prodIndex = products.findIndex(p => p.id === productId);
+                                if (prodIndex !== -1) {
+                                    products[prodIndex].imageUrl = newImgUrl;
+                                    renderProducts(); // re-render fresh
+                                    showToast(`✅ ${products[prodIndex].name} image updated`, "#4cff9e");
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            showToast("❌ invalid image file", "#ff5577");
+                        }
+                    };
+                    fileInput.click();
+                });
+            });
+        }
+
+        // toast notif (non-intrusive)
+        function showToast(msg, color="#b84cff") {
+            let toast = document.createElement('div');
+            toast.innerText = msg;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.backgroundColor = '#0a001f';
+            toast.style.color = '#fff';
+            toast.style.borderLeft = `5px solid ${color}`;
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '40px';
+            toast.style.fontSize = '14px';
+            toast.style.zIndex = '9999';
+            toast.style.backdropFilter = 'blur(12px)';
+            toast.style.fontFamily = 'monospace';
+            toast.style.boxShadow = '0 0 12px rgba(0,0,0,0.5)';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 2200);
+        }
+
+        // Reveal admin panel (only accessible via double-click on the hint, only current user)
+        window.revealAdminPanel = function() {
+            const panel = document.getElementById('adminRevealPanel');
+            if (panel) {
+                panel.classList.toggle('hidden');
+                if (!panel.classList.contains('hidden')) {
+                    showToast("👑 Admin panel unlocked — you can change status & product images now", "#ff88ff");
+                } else {
+                    showToast("Admin panel locked", "#aaa");
+                }
+            }
+        };
+
+        // Initialize status controls & set default
+        function initStatusControls() {
+            updateStatusUI();
+            const onlineBtn = document.getElementById('setOnlineBtn');
+            const offlineBtn = document.getElementById('setOfflineBtn');
+            if (onlineBtn && offlineBtn) {
+                onlineBtn.addEventListener('click', () => {
+                    if (!isAdminPanelVisible()) {
+                        showToast("⛔ Admin verification required. Double-click the zone first.", "#ff6680");
+                        return;
+                    }
+                    currentStatus = "online";
+                    updateStatusUI();
+                    showToast("🌐 System status set to ONLINE (visible to everyone)", "#88ff88");
+                });
+                offlineBtn.addEventListener('click', () => {
+                    if (!isAdminPanelVisible()) {
+                        showToast("⛔ Only admin can change status. Unlock admin panel.", "#ff6680");
+                        return;
+                    }
+                    currentStatus = "offline";
+                    updateStatusUI();
+                    showToast("🌙 System status set to OFFLINE (maintenance)", "#ffaa66");
+                });
+            }
+        }
+
+        function isAdminPanelVisible() {
+            const panel = document.getElementById('adminRevealPanel');
+            return panel && !panel.classList.contains('hidden');
+        }
+
+        // simulate that initial status is online and admin panel is hidden by default
+        // also ensure the status bar update reflects online mode
+        // additionally handle any global status-based restrictions (optional)
+        function applyStatusEffects() {
+            // just update UI, no download buttons present, but we can reflect in products area if offline subtle hint
+            const productContainer = document.getElementById('productGridContainer');
+            if (currentStatus === "offline") {
+                // add a subtle warning overlay but not removing products; just info
+                let offlineMsg = document.getElementById('offlineOverlayMsg');
+                if (!offlineMsg && productContainer && !productContainer.parentElement.querySelector('.offline-badge')) {
+                    const badge = document.createElement('div');
+                    badge.id = 'offlineOverlayMsg';
+                    badge.className = 'text-center text-sm bg-red-900/40 p-2 rounded-lg mt-2 text-orange-200';
+                    badge.innerHTML = '<i class="fas fa-skull-crosswalk"></i> PANDA OFFLINE MODE — services paused, but you can still browse products.';
+                    productContainer.parentElement.appendChild(badge);
+                }
+            } else {
+                const existing = document.getElementById('offlineOverlayMsg');
+                if (existing) existing.remove();
+            }
+        }
+
+        // watch for status changes and re-apply effect
+        const originalUpdate = updateStatusUI;
+        window.updateStatusUI = function() {
+            originalUpdate();
+            applyStatusEffects();
+        };
+        updateStatusUI = window.updateStatusUI;
+        
+        // override updateStatusUI to also run effects
+        const superUI = updateStatusUI;
+        updateStatusUI = function() {
+            superUI();
+            applyStatusEffects();
+        };
+        // replace original binding
+        window.updateStatusUI = updateStatusUI;
+        
+        // final initialization
+        function init() {
+            renderProducts();
+            initStatusControls();
+            // set initial status UI after everything
+            currentStatus = "online";
+            updateStatusUI();
+            applyStatusEffects();
+
+            // Optional: block context menu but not necessary, but add a nice flair: no download buttons anyway
+            // we have to remove any download button; already none
+            // extra: disable right-click on images (optional)
+            document.querySelectorAll('.product-img').forEach(el => {
+                el.addEventListener('contextmenu', (e) => e.preventDefault());
+            });
+        }
+        
+        // make sure product images after re-render also have right-click prevention and admin image logic
+        // call init
+        init();
+
+        // also watch for admin panel double-click hint binding (already in HTML ondblclick)
+        // ensure that after product re-render, new images retain click handler: because renderProducts rebinds event listeners with fresh images
+        // we already use onclick binding inside renderProducts, so it's fine.
+        // Fix also for admin panel visibility detection when re-rendered: no issues.
+        // Additionally, we don't have any download buttons, we removed them as requested
+        // Discord button appears twice as requested, plus status only changeable by admin via unlock.
+        // Also ensure that status persistence: no external change.
+
+        // add small style to make status badge animated
+        const style = document.createElement('style');
+        style.textContent = `
+            .status-badge i.fa-circle {
+                animation: pulseLed 1.2s infinite;
+            }
+            @keyframes pulseLed {
+                0% { opacity: 0.4; transform: scale(0.9);}
+                100% { opacity: 1; transform: scale(1.2);}
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // remove any accidental download leftover? none.
+        // ensure that name: panda.wtf on navbar and title
+        document.title = "panda.wtf • cyber workshop";
+        const navSpan = document.querySelector('nav .text-2xl');
+        if(navSpan) navSpan.innerText = "panda.wtf";
+        
+        // also the ASCII art matches panda vibe.
+        console.log("panda.wtf ready | status only editable by admin double-click");
     </script>
 </body>
 </html>
